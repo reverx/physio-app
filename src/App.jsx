@@ -142,7 +142,7 @@ function App() {
                 </datalist>
               </div>
               <div className="col-md-3">
-                <button className="btn btn-primary w-100" onClick={startNewReport}>
+                <button className="btn btn-primary w-100" onClick={() => startNewReport()}>
                   Commencer
                 </button>
               </div>
