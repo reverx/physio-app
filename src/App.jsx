@@ -107,7 +107,7 @@ function App() {
     <div className="container mt-5">
       <div className="row justify-content-center">
         <div className="col-md-8 text-center">
-          <h1 className="mb-5">📝 Carnet de Notes Physio</h1>
+          <h1 className="mb-5">📝 Carnet de Notes Physio (v1.1)</h1>
 
           <div className="card shadow p-4 mb-5">
             <h3 className="mb-4">Nouveau Rapport</h3>
