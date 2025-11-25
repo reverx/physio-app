@@ -9,6 +9,8 @@ import NotesForm from './components/NotesForm';
 import EquilibreMenu from './components/EquilibreMenu';
 import BergTest from './components/BergTest';
 import PainScale from './components/PainScale';
+import CircularGoniometer from './components/CircularGoniometer';
+import TimerInput from './components/TimerInput';
 import { jointMovements, initialObjectiveData, bergItems, exerciseCategories } from './constants';
 
 function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) {
@@ -17,6 +19,10 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
     const [showPainScale, setShowPainScale] = useState(false);
     const [painScaleTarget, setPainScaleTarget] = useState(null); // 'subjectif' or 'evalFinTx'
     const [copyFeedback, setCopyFeedback] = useState('');
+
+    // Goniometer state
+    const [showGoniometer, setShowGoniometer] = useState(false);
+    const [goniometerTarget, setGoniometerTarget] = useState(null); // { joint, side, movement, type }
 
     // Data states - Initialize from initialData if available
     const [subjectiveNotes, setSubjectiveNotes] = useState(initialData?.subjectiveNotes || '');
@@ -38,6 +44,18 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
     const [marcheTime, setMarcheTime] = useState(initialData?.marcheTime || '');
     const [marcheBorgPre, setMarcheBorgPre] = useState(initialData?.marcheBorgPre || '');
     const [marcheBorgPost, setMarcheBorgPost] = useState(initialData?.marcheBorgPost || '');
+
+    // Oedeme state
+    const [oedemeData, setOedemeData] = useState(initialData?.oedemeData || {
+        articulationName: '',
+        articulation: '',
+        above5cm: '',
+        below5cm: '',
+        oedemePresent: false,
+        colorationBleute: false,
+        temperatureChaude: false,
+        temperatureFroide: false
+    });
 
     // Checklist state for 'Exercices'
     // Structure: { [exerciseName]: { checked: boolean, reps: '', sets: '', hold: '' } }
@@ -62,6 +80,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         marcheTime,
         marcheBorgPre,
         marcheBorgPost,
+        oedemeData,
         exerciseChecklist,
     });
 
@@ -91,6 +110,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         marcheTime,
         marcheBorgPre,
         marcheBorgPost,
+        oedemeData,
         exerciseChecklist,
         onSave
     ]);
@@ -222,6 +242,31 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
             objectifContent += `équilibre\n\n${equilibreContent}`;
         }
 
+        // Oedème Section
+        const hasOedemeData = oedemeData.articulation || oedemeData.above5cm || oedemeData.below5cm ||
+            oedemeData.oedemePresent || oedemeData.colorationBleute ||
+            oedemeData.temperatureChaude || oedemeData.temperatureFroide;
+
+        if (hasOedemeData) {
+            objectifContent += `--- Oedème/Enflure/Coloration ---\n`;
+
+            const observations = [];
+            if (oedemeData.oedemePresent) observations.push('Oedème présent');
+            if (oedemeData.colorationBleute) observations.push('Coloration bleutée');
+            if (oedemeData.temperatureChaude) observations.push('Température chaude');
+            if (oedemeData.temperatureFroide) observations.push('Température froide');
+
+            if (observations.length > 0) {
+                objectifContent += `Observations: ${observations.join(', ')}\n`;
+            }
+
+            const artName = oedemeData.articulationName ? ` (${oedemeData.articulationName})` : '';
+            if (oedemeData.articulation) objectifContent += `Mesure au niveau de l'articulation${artName}: ${oedemeData.articulation} cm\n`;
+            if (oedemeData.above5cm) objectifContent += `Mesure 5cm au dessus de l'articulation${artName}: ${oedemeData.above5cm} cm\n`;
+            if (oedemeData.below5cm) objectifContent += `Mesure 5cm sous l'articulation${artName}: ${oedemeData.below5cm} cm\n`;
+            objectifContent += `\n`;
+        }
+
         // Add other sections dynamically
         const otherSections = [
             { title: 'Marche', data: marcheNotes, aideTechnique: aideTechnique, distance: marcheDistance, time: marcheTime, borgPre: marcheBorgPre, borgPost: marcheBorgPost },
@@ -347,6 +392,25 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                     onCancel={() => {
                         setShowPainScale(false);
                         setPainScaleTarget(null);
+                    }}
+                />
+            );
+        }
+
+        if (showGoniometer) {
+            return (
+                <CircularGoniometer
+                    initialValue={goniometerTarget ? objectiveData['aa-bm'][goniometerTarget.joint][goniometerTarget.side][goniometerTarget.movement][goniometerTarget.type] : 0}
+                    onSave={(value) => {
+                        if (goniometerTarget) {
+                            handleJointDataChange(goniometerTarget.joint, goniometerTarget.side, goniometerTarget.movement, goniometerTarget.type, value);
+                        }
+                        setShowGoniometer(false);
+                        setGoniometerTarget(null);
+                    }}
+                    onCancel={() => {
+                        setShowGoniometer(false);
+                        setGoniometerTarget(null);
                     }}
                 />
             );
@@ -483,20 +547,44 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                             <tr key={movement}>
                                                 <td className="fw-bold align-middle">{movement}</td>
                                                 <td>
-                                                    <input
-                                                        type="text"
-                                                        className="form-control form-control-sm"
-                                                        value={objectiveData['aa-bm'][joint][side][movement]?.amplitudeActif || ''}
-                                                        onChange={(e) => handleJointDataChange(joint, side, movement, 'amplitudeActif', e.target.value)}
-                                                    />
+                                                    <div className="input-group input-group-sm">
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            value={objectiveData['aa-bm'][joint][side][movement]?.amplitudeActif || ''}
+                                                            onChange={(e) => handleJointDataChange(joint, side, movement, 'amplitudeActif', e.target.value)}
+                                                        />
+                                                        <button
+                                                            className="btn btn-outline-secondary"
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setGoniometerTarget({ joint, side, movement, type: 'amplitudeActif' });
+                                                                setShowGoniometer(true);
+                                                            }}
+                                                        >
+                                                            📐
+                                                        </button>
+                                                    </div>
                                                 </td>
                                                 <td>
-                                                    <input
-                                                        type="text"
-                                                        className="form-control form-control-sm"
-                                                        value={objectiveData['aa-bm'][joint][side][movement]?.amplitudePassif || ''}
-                                                        onChange={(e) => handleJointDataChange(joint, side, movement, 'amplitudePassif', e.target.value)}
-                                                    />
+                                                    <div className="input-group input-group-sm">
+                                                        <input
+                                                            type="text"
+                                                            className="form-control"
+                                                            value={objectiveData['aa-bm'][joint][side][movement]?.amplitudePassif || ''}
+                                                            onChange={(e) => handleJointDataChange(joint, side, movement, 'amplitudePassif', e.target.value)}
+                                                        />
+                                                        <button
+                                                            className="btn btn-outline-secondary"
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setGoniometerTarget({ joint, side, movement, type: 'amplitudePassif' });
+                                                                setShowGoniometer(true);
+                                                            }}
+                                                        >
+                                                            📐
+                                                        </button>
+                                                    </div>
                                                 </td>
                                                 <td>
                                                     <input
@@ -556,21 +644,21 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                             <div>
                                 <NavigationHeader onBack={() => setCurrentView('objectif.equilibre')} />
                                 <h2>Équilibre - TUG</h2>
-                                <NotesForm
-                                    label="TUG"
-                                    placeholder="Notes sur TUG..."
+                                <TimerInput
+                                    label="TUG (distance 3 mètres)"
+                                    placeholder="Temps ou notes..."
                                     value={equilibreData.tugStandard}
                                     onChange={(v) => handleEquilibreDataChange('tugStandard', v)}
                                 />
-                                <NotesForm
+                                <TimerInput
                                     label="TUG Cognitif"
-                                    placeholder="Notes sur TUG Cognitif..."
+                                    placeholder="Temps ou notes..."
                                     value={equilibreData.tugCognitif}
                                     onChange={(v) => handleEquilibreDataChange('tugCognitif', v)}
                                 />
-                                <NotesForm
+                                <TimerInput
                                     label="TUG Moteur"
-                                    placeholder="Notes sur TUG Moteur..."
+                                    placeholder="Temps ou notes..."
                                     value={equilibreData.tugMoteur}
                                     onChange={(v) => handleEquilibreDataChange('tugMoteur', v)}
                                 />
@@ -600,6 +688,99 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                     'transferts': { title: 'Transferts', state: transfertsNotes, setState: setTransfertsNotes },
                 };
 
+                if (subView === 'oedeme') {
+                    return (
+                        <div>
+                            {goBackToObjectiveMenu}
+                            <h2>Oedème/Enflure/Coloration</h2>
+
+                            <div className="mb-4 p-3 border rounded bg-light oedeme-container">
+                                <div className="form-check form-check-inline">
+                                    <input
+                                        className="form-check-input oedeme-checkbox-input"
+                                        type="checkbox"
+                                        id="oedemePresent"
+                                        checked={oedemeData.oedemePresent || false}
+                                        onChange={(e) => setOedemeData({ ...oedemeData, oedemePresent: e.target.checked })}
+                                    />
+                                    <label className="form-check-label oedeme-checkbox-label" htmlFor="oedemePresent">Oedème présent</label>
+                                </div>
+                                <div className="form-check form-check-inline">
+                                    <input
+                                        className="form-check-input oedeme-checkbox-input"
+                                        type="checkbox"
+                                        id="colorationBleute"
+                                        checked={oedemeData.colorationBleute || false}
+                                        onChange={(e) => setOedemeData({ ...oedemeData, colorationBleute: e.target.checked })}
+                                    />
+                                    <label className="form-check-label oedeme-checkbox-label" htmlFor="colorationBleute">Coloration bleutée</label>
+                                </div>
+                                <div className="form-check form-check-inline">
+                                    <input
+                                        className="form-check-input oedeme-checkbox-input"
+                                        type="checkbox"
+                                        id="temperatureChaude"
+                                        checked={oedemeData.temperatureChaude || false}
+                                        onChange={(e) => setOedemeData({ ...oedemeData, temperatureChaude: e.target.checked })}
+                                    />
+                                    <label className="form-check-label oedeme-checkbox-label" htmlFor="temperatureChaude">Température Chaude</label>
+                                </div>
+                                <div className="form-check form-check-inline">
+                                    <input
+                                        className="form-check-input oedeme-checkbox-input"
+                                        type="checkbox"
+                                        id="temperatureFroide"
+                                        checked={oedemeData.temperatureFroide || false}
+                                        onChange={(e) => setOedemeData({ ...oedemeData, temperatureFroide: e.target.checked })}
+                                    />
+                                    <label className="form-check-label oedeme-checkbox-label" htmlFor="temperatureFroide">Température Froide</label>
+                                </div>
+                            </div>
+
+                            <div className="mb-3">
+                                <label className="form-label">Nom de l'articulation</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="ex: Genou D"
+                                    value={oedemeData.articulationName || ''}
+                                    onChange={(e) => setOedemeData({ ...oedemeData, articulationName: e.target.value })}
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Mesure en cm au niveau de l'articulation</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="cm"
+                                    value={oedemeData.articulation}
+                                    onChange={(e) => setOedemeData({ ...oedemeData, articulation: e.target.value })}
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Mesure en cm 5cm au dessus de l'articulation</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="cm"
+                                    value={oedemeData.above5cm}
+                                    onChange={(e) => setOedemeData({ ...oedemeData, above5cm: e.target.value })}
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Mesure en cm 5cm sous l'articulation</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="cm"
+                                    value={oedemeData.below5cm}
+                                    onChange={(e) => setOedemeData({ ...oedemeData, below5cm: e.target.value })}
+                                />
+                            </div>
+                        </div>
+                    );
+                }
+
                 if (simpleObjectiveSections[subView]) {
                     const { title, state, setState } = simpleObjectiveSections[subView];
 
@@ -621,6 +802,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                         >
                                             <option value="Aucun">Aucun</option>
                                             <option value="MR">MR</option>
+                                            <option value="déambulateur">déambulateur</option>
                                             <option value="Canne">Canne</option>
                                             <option value="Canne Quad base étroite">Canne Quad base étroite</option>
                                             <option value="demi-MR">demi-MR</option>

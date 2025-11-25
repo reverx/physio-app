@@ -24,3 +24,26 @@ code {
   border-color: #198754 !important;
   color: white !important;
 }
+
+/* Dark mode adjustments for Oedeme checkboxes */
+[data-bs-theme='dark'] .oedeme-checkbox-label {
+  color: #20c997 !important;
+  /* Turquoise text */
+}
+
+[data-bs-theme='dark'] .oedeme-checkbox-input {
+  background-color: white !important;
+  border-color: white !important;
+}
+
+[data-bs-theme='dark'] .oedeme-checkbox-input:checked {
+  background-color: #0d6efd !important;
+  /* Bootstrap primary blue for checked state */
+  border-color: #0d6efd !important;
+}
+
+[data-bs-theme='dark'] .oedeme-container {
+  background-color: #2b3035 !important;
+  /* Darker background for container */
+  border-color: #495057 !important;
+}

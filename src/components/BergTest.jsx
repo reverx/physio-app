@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const bergItems = [
   'Passer de la position assis à debout',
@@ -24,6 +24,31 @@ function BergTest({ initialScores, onSave }) {
     : Array(14).fill(0);
 
   const [scores, setScores] = useState(validInitialScores);
+
+  // Stopwatch state
+  const [isRunning, setIsRunning] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [savedTime, setSavedTime] = useState(null);
+  const startTimeRef = useRef(null);
+  const intervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => clearInterval(intervalRef.current);
+  }, []);
+
+  const toggleTimer = () => {
+    if (isRunning) {
+      clearInterval(intervalRef.current);
+      setIsRunning(false);
+      setSavedTime((elapsed / 1000).toFixed(1) + 's');
+    } else {
+      startTimeRef.current = Date.now() - elapsed;
+      intervalRef.current = setInterval(() => {
+        setElapsed(Date.now() - startTimeRef.current);
+      }, 100);
+      setIsRunning(true);
+    }
+  };
 
   // Propagate changes up to parent (App.jsx)
   useEffect(() => {
@@ -75,8 +100,34 @@ function BergTest({ initialScores, onSave }) {
           ))}
         </tbody>
       </table>
-      <div className="text-end fs-4 mt-3">
-        <strong>Total : {totalScore} / 56</strong>
+      <div className="d-flex justify-content-between align-items-center mt-3">
+        <div className="d-flex align-items-center gap-2">
+          <button
+            className={`btn ${isRunning ? 'btn-danger' : 'btn-outline-primary'}`}
+            type="button"
+            onClick={toggleTimer}
+            style={{ minWidth: '120px' }}
+          >
+            {isRunning ? `Stop (${(elapsed / 1000).toFixed(1)}s)` : '⏱️ Chrono'}
+          </button>
+          <button
+            className="btn btn-outline-secondary"
+            type="button"
+            onClick={() => {
+              clearInterval(intervalRef.current);
+              setIsRunning(false);
+              setElapsed(0);
+              setSavedTime(null);
+            }}
+            title="Réinitialiser"
+          >
+            🔄
+          </button>
+          {savedTime && <span className="text-primary fw-bold ms-2">Mém: {savedTime}</span>}
+        </div>
+        <div className="fs-4">
+          <strong>Total : {totalScore} / 56</strong>
+        </div>
       </div>
     </div>
   );

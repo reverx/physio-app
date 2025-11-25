@@ -39,6 +39,12 @@ function ObjectiveMenu({ onSelectView }) {
       >
         Transferts
       </button>
+      <button
+        className="btn btn-info p-3 text-white"
+        onClick={() => onSelectView('objectif.oedeme')}
+      >
+        Oedème/Enflure/Coloration
+      </button>
     </div>
   );
 }
