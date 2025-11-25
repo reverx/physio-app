@@ -136,8 +136,15 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
             for (const side of ['Gauche', 'Droite']) {
                 const movementsWithData = [];
                 for (const movement of jointMovements[joint]) {
-                    if (objectiveData['aa-bm'][joint]?.[side]?.[movement]?.value?.trim()) {
-                        movementsWithData.push(`- ${movement}: ${objectiveData['aa-bm'][joint][side][movement].value}`);
+                    const data = objectiveData['aa-bm'][joint]?.[side]?.[movement];
+                    if (data && (data.amplitudeActif?.trim() || data.amplitudePassif?.trim() || data.bilanMusculaire?.trim() || data.douleur?.trim() || data.sfm?.trim())) {
+                        let line = `- ${movement}:`;
+                        if (data.amplitudeActif?.trim()) line += ` Amplitude Active: ${data.amplitudeActif}`;
+                        if (data.amplitudePassif?.trim()) line += ` Amplitude Passive: ${data.amplitudePassif}`;
+                        if (data.bilanMusculaire?.trim()) line += ` BM: ${data.bilanMusculaire}`;
+                        if (data.douleur?.trim()) line += ` Dlr: ${data.douleur}`;
+                        if (data.sfm?.trim()) line += ` SFM: ${data.sfm}`;
+                        movementsWithData.push(line);
                     }
                 }
                 if (movementsWithData.length > 0) {
@@ -231,7 +238,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
             report += `I:\n\n`;
 
             Object.entries(exerciseCategories).forEach(([category, items]) => {
-                const selectedInCat = items.filter(item => exerciseChecklist[item]?.checked);
+                const selectedInCat = items.filter(item => exerciseChecklist[item]?.checked && !item.startsWith('HEADER:'));
                 if (selectedInCat.length > 0) {
                     report += `${category}:\n`;
                     selectedInCat.forEach(item => {
@@ -239,7 +246,8 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                         let detailString = '';
                         if (details.sets) detailString += `${details.sets} x `;
                         if (details.reps) detailString += `${details.reps} reps `;
-                        if (details.hold) detailString += `(${details.hold})`;
+                        if (details.hold) detailString += `(${details.hold}) `;
+                        if (details.comment) detailString += `- ${details.comment}`;
 
                         report += `- ${item} ${detailString.trim()}\n`;
                     });
@@ -258,7 +266,8 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                     let detailString = '';
                     if (details.sets) detailString += `${details.sets} x `;
                     if (details.reps) detailString += `${details.reps} reps `;
-                    if (details.hold) detailString += `(${details.hold})`;
+                    if (details.hold) detailString += `(${details.hold}) `;
+                    if (details.comment) detailString += `- ${details.comment}`;
                     report += `- ${item} ${detailString.trim()}\n`;
                 });
                 report += '\n';
@@ -400,14 +409,76 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                         return (<div>{goBackToObjectiveMenu}
                             <BodyPartMenu bodyParts={Object.keys(jointMovements)} onSelect={(j, s) => setCurrentView(`objectif.aa-bm.${j}.${s}`)} /></div>);
                     }
-                    if (!movement) {
-                        return (<div><NavigationHeader onBack={() => setCurrentView('objectif.aa-bm')} />
+                    return (
+                        <div>
+                            <NavigationHeader onBack={() => setCurrentView('objectif.aa-bm')} />
                             <h3 className="mb-3">{joint} - {side}</h3>
-                            <MovementMenu movements={jointMovements[joint]} onSelect={m => setCurrentView(`${currentView}.${m}`)} /></div>);
-                    }
-                    return (<div><NavigationHeader onBack={() => setCurrentView(`objectif.aa-bm.${joint}.${side}`)} />
-                        <h3 className="mb-3">{joint} {side} - {movement}</h3>
-                        <JointDataForm jointData={objectiveData['aa-bm'][joint][side][movement]} onDataChange={(f, v) => handleJointDataChange(joint, side, movement, f, v)} /></div>);
+                            <div className="table-responsive">
+                                <table className="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th rowSpan="2" className="align-middle">Mouvement</th>
+                                            <th colSpan="2" className="text-center">Amplitude</th>
+                                            <th rowSpan="2" className="align-middle">Bilan Musculaire</th>
+                                            <th rowSpan="2" className="align-middle">Douleur</th>
+                                            <th rowSpan="2" className="align-middle">SFM</th>
+                                        </tr>
+                                        <tr>
+                                            <th className="text-center small">Actif</th>
+                                            <th className="text-center small">Passif</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {jointMovements[joint].map(movement => (
+                                            <tr key={movement}>
+                                                <td className="fw-bold align-middle">{movement}</td>
+                                                <td>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control form-control-sm"
+                                                        value={objectiveData['aa-bm'][joint][side][movement]?.amplitudeActif || ''}
+                                                        onChange={(e) => handleJointDataChange(joint, side, movement, 'amplitudeActif', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control form-control-sm"
+                                                        value={objectiveData['aa-bm'][joint][side][movement]?.amplitudePassif || ''}
+                                                        onChange={(e) => handleJointDataChange(joint, side, movement, 'amplitudePassif', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control form-control-sm"
+                                                        value={objectiveData['aa-bm'][joint][side][movement]?.bilanMusculaire || ''}
+                                                        onChange={(e) => handleJointDataChange(joint, side, movement, 'bilanMusculaire', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control form-control-sm"
+                                                        value={objectiveData['aa-bm'][joint][side][movement]?.douleur || ''}
+                                                        onChange={(e) => handleJointDataChange(joint, side, movement, 'douleur', e.target.value)}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="text"
+                                                        className="form-control form-control-sm"
+                                                        value={objectiveData['aa-bm'][joint][side][movement]?.sfm || ''}
+                                                        onChange={(e) => handleJointDataChange(joint, side, movement, 'sfm', e.target.value)}
+                                                    />
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    );
                 }
 
                 if (subView === 'equilibre') {
@@ -566,53 +637,71 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                             <h5 className="text-primary border-bottom pb-2">{category}</h5>
                                             {items.length > 0 ? (
                                                 <div className="list-group">
-                                                    {items.map((exercise) => (
-                                                        <div key={exercise} className="list-group-item">
-                                                            <div className="d-flex align-items-center mb-2">
-                                                                <input
-                                                                    type="checkbox"
-                                                                    id={`exercise-${exercise}`}
-                                                                    className="form-check-input me-2"
-                                                                    checked={exerciseChecklist[exercise]?.checked || false}
-                                                                    onChange={() => toggleExercise(exercise)}
-                                                                />
-                                                                <label htmlFor={`exercise-${exercise}`} className="form-check-label fw-bold">
-                                                                    {exercise}
-                                                                </label>
-                                                            </div>
-                                                            {exerciseChecklist[exercise]?.checked && (
-                                                                <div className="row g-2 ms-4">
-                                                                    <div className="col-4">
-                                                                        <input
-                                                                            type="text"
-                                                                            className="form-control form-control-sm"
-                                                                            placeholder="Séries"
-                                                                            value={exerciseChecklist[exercise]?.sets || ''}
-                                                                            onChange={(e) => handleExerciseDetailChange(exercise, 'sets', e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="col-4">
-                                                                        <input
-                                                                            type="text"
-                                                                            className="form-control form-control-sm"
-                                                                            placeholder="Reps"
-                                                                            value={exerciseChecklist[exercise]?.reps || ''}
-                                                                            onChange={(e) => handleExerciseDetailChange(exercise, 'reps', e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="col-4">
-                                                                        <input
-                                                                            type="text"
-                                                                            className="form-control form-control-sm"
-                                                                            placeholder="Hold"
-                                                                            value={exerciseChecklist[exercise]?.hold || ''}
-                                                                            onChange={(e) => handleExerciseDetailChange(exercise, 'hold', e.target.value)}
-                                                                        />
-                                                                    </div>
+                                                    {items.map((exercise) => {
+                                                        if (exercise.startsWith('HEADER:')) {
+                                                            return (
+                                                                <div key={exercise} className="list-group-item bg-light fw-bold text-secondary">
+                                                                    {exercise.replace('HEADER:', '')}
                                                                 </div>
-                                                            )}
-                                                        </div>
-                                                    ))}
+                                                            );
+                                                        }
+                                                        return (
+                                                            <div key={exercise} className="list-group-item">
+                                                                <div className="d-flex align-items-center mb-2">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        id={`exercise-${exercise}`}
+                                                                        className="form-check-input me-2"
+                                                                        checked={exerciseChecklist[exercise]?.checked || false}
+                                                                        onChange={() => toggleExercise(exercise)}
+                                                                    />
+                                                                    <label htmlFor={`exercise-${exercise}`} className="form-check-label fw-bold">
+                                                                        {exercise}
+                                                                    </label>
+                                                                </div>
+                                                                {exerciseChecklist[exercise]?.checked && (
+                                                                    <div className="row g-2 ms-4">
+                                                                        <div className="col-3">
+                                                                            <input
+                                                                                type="text"
+                                                                                className="form-control form-control-sm"
+                                                                                placeholder="Séries"
+                                                                                value={exerciseChecklist[exercise]?.sets || ''}
+                                                                                onChange={(e) => handleExerciseDetailChange(exercise, 'sets', e.target.value)}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="col-3">
+                                                                            <input
+                                                                                type="text"
+                                                                                className="form-control form-control-sm"
+                                                                                placeholder="Reps"
+                                                                                value={exerciseChecklist[exercise]?.reps || ''}
+                                                                                onChange={(e) => handleExerciseDetailChange(exercise, 'reps', e.target.value)}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="col-3">
+                                                                            <input
+                                                                                type="text"
+                                                                                className="form-control form-control-sm"
+                                                                                placeholder="Hold"
+                                                                                value={exerciseChecklist[exercise]?.hold || ''}
+                                                                                onChange={(e) => handleExerciseDetailChange(exercise, 'hold', e.target.value)}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="col-3">
+                                                                            <input
+                                                                                type="text"
+                                                                                className="form-control form-control-sm"
+                                                                                placeholder="Comm."
+                                                                                value={exerciseChecklist[exercise]?.comment || ''}
+                                                                                onChange={(e) => handleExerciseDetailChange(exercise, 'comment', e.target.value)}
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             ) : (
                                                 <p className="text-muted ps-3 fst-italic small">Aucun exercice prédéfini</p>

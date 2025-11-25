@@ -13,7 +13,7 @@ export const initialObjectiveData = { 'aa-bm': {} };
 Object.keys(jointMovements).forEach(joint => {
     initialObjectiveData['aa-bm'][joint] = { 'Gauche': {}, 'Droite': {} };
     jointMovements[joint].forEach(movement => {
-        const fields = { amplitude: '', bilanMusculaire: '', douleur: '', sfm: '' };
+        const fields = { amplitudeActif: '', amplitudePassif: '', bilanMusculaire: '', douleur: '', sfm: '' };
         initialObjectiveData['aa-bm'][joint]['Gauche'][movement] = { ...fields };
         initialObjectiveData['aa-bm'][joint]['Droite'][movement] = { ...fields };
     });
@@ -52,7 +52,12 @@ export const exerciseCategories = {
         '1/2 fente avant'
     ],
     'Exs de renforcements M.infs': [
-        'Squat'
+        'HEADER:Debout',
+        'Squat',
+        'HEADER:Assis',
+        'Flex de hanche',
+        'Ext du genou',
+        'Flex du genou avec Terra-band'
     ],
     'Exs de renforcements M.Sups': [
         'Pushup debout incliné 45deg sur table',
