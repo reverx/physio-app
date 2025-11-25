@@ -5,10 +5,22 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f9fa;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+.btn-turquoise {
+  background-color: #20c997 !important;
+  border-color: #20c997 !important;
+  color: white !important;
+}
+
+.btn-turquoise:hover {
+  background-color: #198754 !important;
+  /* Darker teal/green for hover */
+  border-color: #198754 !important;
+  color: white !important;
 }

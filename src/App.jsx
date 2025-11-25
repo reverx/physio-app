@@ -13,6 +13,14 @@ function App() {
     setSavedReports(getSavedReports());
   }, [view]); // Refresh list when returning to home
 
+  const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-bs-theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
+
+  const toggleDarkMode = () => setDarkMode(!darkMode);
+
   const startNewReport = (nameOverride) => {
     const nameToUse = nameOverride || patientName;
     if (nameToUse.trim()) {
@@ -91,7 +99,15 @@ function App() {
     const initialData = currentReportId ? getReportById(currentReportId) : null;
 
     return (
-      <div className="container mt-4 mb-5">
+      <div className="container mt-4 mb-5 position-relative">
+        <button
+          className="btn btn-outline-secondary position-absolute top-0"
+          onClick={toggleDarkMode}
+          title="Basculer le mode sombre"
+          style={{ zIndex: 1000, right: '220px' }}
+        >
+          {darkMode ? '☀️' : '🌗'}
+        </button>
         <ReportEditor
           patientName={patientName}
           reportDate={reportDate}
@@ -104,7 +120,15 @@ function App() {
   }
 
   return (
-    <div className="container mt-5">
+    <div className="container mt-5 position-relative">
+      <button
+        className="btn btn-outline-secondary position-absolute top-0 end-0 mt-2 me-2"
+        onClick={toggleDarkMode}
+        title="Basculer le mode sombre"
+        style={{ zIndex: 1000 }}
+      >
+        {darkMode ? '☀️' : '🌗'}
+      </button>
       <div className="row justify-content-center">
         <div className="col-md-8 text-center">
           <h1 className="mb-5">📝 Carnet de Notes Physio (v1.2)</h1>

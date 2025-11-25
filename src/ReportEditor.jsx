@@ -16,6 +16,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
     const [showReport, setShowReport] = useState(false);
     const [showPainScale, setShowPainScale] = useState(false);
     const [painScaleTarget, setPainScaleTarget] = useState(null); // 'subjectif' or 'evalFinTx'
+    const [copyFeedback, setCopyFeedback] = useState('');
 
     // Data states - Initialize from initialData if available
     const [subjectiveNotes, setSubjectiveNotes] = useState(initialData?.subjectiveNotes || '');
@@ -63,6 +64,36 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         marcheBorgPost,
         exerciseChecklist,
     });
+
+    // Auto-save effect
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            const data = getCurrentData();
+            onSave(data);
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    }, [
+        subjectiveNotes,
+        painScore,
+        objectiveData,
+        equilibreData,
+        marcheNotes,
+        escalierNotes,
+        exercicesNotes,
+        transfertsNotes,
+        analyseNotes,
+        planNotes,
+        evalFinTxNotes,
+        evalFinTxPainScore,
+        aideTechnique,
+        marcheDistance,
+        marcheTime,
+        marcheBorgPre,
+        marcheBorgPost,
+        exerciseChecklist,
+        onSave
+    ]);
 
     const handleGenerateReport = () => {
         const data = getCurrentData();
@@ -289,6 +320,17 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         return report;
     };
 
+    const handleCopyReport = async () => {
+        try {
+            await navigator.clipboard.writeText(generateReportText());
+            setCopyFeedback('Copié !');
+            setTimeout(() => setCopyFeedback(''), 2000);
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+            setCopyFeedback('Erreur');
+        }
+    };
+
     const renderContent = () => {
         if (showPainScale) {
             return (
@@ -316,7 +358,15 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                     <h2>Rapport Généré</h2>
                     <p>Copiez le texte ci-dessous.</p>
                     <textarea readOnly className="form-control" style={{ height: '400px' }} value={generateReportText()} />
-                    <button className="btn btn-primary mt-3" onClick={() => setShowReport(false)}>Fermer</button>
+                    <div className="mt-3">
+                        <button
+                            className={`btn ${copyFeedback === 'Copié !' ? 'btn-success' : 'btn-outline-primary'} me-2`}
+                            onClick={handleCopyReport}
+                        >
+                            {copyFeedback || 'Copier le texte'}
+                        </button>
+                        <button className="btn btn-primary" onClick={() => setShowReport(false)}>Fermer</button>
+                    </div>
                 </div>
             );
         }

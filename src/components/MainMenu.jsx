@@ -10,7 +10,7 @@ function MainMenu({ onSelectView }) {
         Subjectif
       </button>
       <button
-        className="btn btn-secondary btn-lg p-4"
+        className="btn btn-turquoise btn-lg p-4"
         onClick={() => onSelectView('objectif')}
       >
         Objectif
@@ -28,7 +28,7 @@ function MainMenu({ onSelectView }) {
         Plan
       </button>
       <button
-        className="btn btn-dark btn-lg p-4"
+        className="btn btn-secondary btn-lg p-4"
         onClick={() => onSelectView('eval-fin-tx')}
       >
         Eval fin du tx
