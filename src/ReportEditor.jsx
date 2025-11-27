@@ -37,6 +37,8 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
     const [planNotes, setPlanNotes] = useState(initialData?.planNotes || '');
     const [evalFinTxNotes, setEvalFinTxNotes] = useState(initialData?.evalFinTxNotes || '');
     const [evalFinTxPainScore, setEvalFinTxPainScore] = useState(initialData?.evalFinTxPainScore ?? null);
+    const [subjectivePainLocation, setSubjectivePainLocation] = useState(initialData?.subjectivePainLocation || '');
+    const [evalFinTxPainLocation, setEvalFinTxPainLocation] = useState(initialData?.evalFinTxPainLocation || '');
 
     // State for 'aide-technique utilisé'
     const [aideTechnique, setAideTechnique] = useState(initialData?.aideTechnique || 'Aucun');
@@ -44,6 +46,11 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
     const [marcheTime, setMarcheTime] = useState(initialData?.marcheTime || '');
     const [marcheBorgPre, setMarcheBorgPre] = useState(initialData?.marcheBorgPre || '');
     const [marcheBorgPost, setMarcheBorgPost] = useState(initialData?.marcheBorgPost || '');
+
+    // Escalier state
+    const [escalierPatron, setEscalierPatron] = useState(initialData?.escalierPatron || ''); // 'alterné', 'non-alterné', or ''
+    const [escalierMarches, setEscalierMarches] = useState(initialData?.escalierMarches || '');
+    const [escalierMainCourante, setEscalierMainCourante] = useState(initialData?.escalierMainCourante || ''); // '0', '1', '2'
 
     // Oedeme state
     const [oedemeData, setOedemeData] = useState(initialData?.oedemeData || {
@@ -82,6 +89,11 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         marcheBorgPost,
         oedemeData,
         exerciseChecklist,
+        subjectivePainLocation,
+        evalFinTxPainLocation,
+        escalierPatron,
+        escalierMarches,
+        escalierMainCourante,
     });
 
     // Auto-save effect
@@ -112,6 +124,11 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         marcheBorgPost,
         oedemeData,
         exerciseChecklist,
+        subjectivePainLocation,
+        evalFinTxPainLocation,
+        escalierPatron,
+        escalierMarches,
+        escalierMainCourante,
         onSave
     ]);
 
@@ -169,7 +186,11 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         if (subjectiveNotes.trim() || painScore !== null) {
             report += `S:\n`;
             if (painScore !== null) {
-                report += `Douleur (EVA): ${painScore}/10\n`;
+                const painText = painScore === 0 ? 'Aucune Douleur' : `${painScore}/10`;
+                report += `Douleur (EVA): ${painText}\n`;
+            }
+            if (subjectivePainLocation.trim()) {
+                report += `Localisation: ${subjectivePainLocation.trim()}\n`;
             }
             if (subjectiveNotes.trim()) {
                 report += `${subjectiveNotes.trim()}\n`;
@@ -270,7 +291,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         // Add other sections dynamically
         const otherSections = [
             { title: 'Marche', data: marcheNotes, aideTechnique: aideTechnique, distance: marcheDistance, time: marcheTime, borgPre: marcheBorgPre, borgPost: marcheBorgPost },
-            { title: 'Escalier', data: escalierNotes },
+            { title: 'Escalier', data: escalierNotes, patron: escalierPatron, marches: escalierMarches, mainCourante: escalierMainCourante },
             { title: 'Exercices', data: exercicesNotes },
             { title: 'Transferts', data: transfertsNotes },
         ];
@@ -287,6 +308,13 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
 
                     const notesContent = section.data.trim() ? `Commentaire: ${section.data.trim()}` : '';
                     objectifContent += `--- ${section.title} ---\n${marcheDetails}${notesContent}\n\n`;
+                } else if (section.title === 'Escalier') {
+                    let escalierDetails = '';
+                    if (section.patron) escalierDetails += `Patron: ${section.patron}\n`;
+                    if (section.mainCourante) escalierDetails += `Main-courante: ${section.mainCourante}\n`;
+                    if (section.marches) escalierDetails += `Nombre de marches: ${section.marches}\n`;
+                    const notesContent = section.data.trim() ? `Notes: ${section.data.trim()}` : '';
+                    objectifContent += `--- ${section.title} ---\n${escalierDetails}${notesContent}\n\n`;
                 } else {
                     objectifContent += `--- ${section.title} ---\n${section.data.trim()}\n\n`;
                 }
@@ -299,7 +327,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
 
         // Analyse Section
         if (analyseNotes.trim()) {
-            report += `### ANALYSE ###\n${analyseNotes.trim()}\n\n`;
+            report += `A:\n${analyseNotes.trim()}\n\n`;
         }
 
         // Plan Section
@@ -308,10 +336,73 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         }
 
         // Intervention Section
+        // Intervention Section
         const hasSelectedExercises = Object.keys(exerciseChecklist).some(k => exerciseChecklist[k]?.checked);
 
-        if (hasSelectedExercises) {
+        // Automatic interventions based on filled data
+        const automaticInterventions = [];
+
+        // Subjectif filled -> Écoute active
+        if (subjectiveNotes.trim() || painScore !== null || subjectivePainLocation.trim()) {
+            automaticInterventions.push('Écoute active');
+        }
+
+        // AA filled -> prise d'AA
+        let hasAA = false;
+        let hasBM = false;
+        for (const joint of Object.keys(jointMovements)) {
+            for (const side of ['Gauche', 'Droite']) {
+                for (const movement of jointMovements[joint]) {
+                    const data = objectiveData['aa-bm'][joint]?.[side]?.[movement];
+                    if (data) {
+                        if (data.amplitudeActif?.trim() || data.amplitudePassif?.trim()) hasAA = true;
+                        if (data.bilanMusculaire?.trim()) hasBM = true;
+                    }
+                }
+            }
+        }
+        if (hasAA) automaticInterventions.push("prise d'AA");
+        if (hasBM) automaticInterventions.push("BMM");
+
+        // BERG filled -> BERG
+        const hasBerg = equilibreData.berg.some(s => s !== null && s >= 1 && s <= 4); // Using same logic as Objectif section
+        if (hasBerg) automaticInterventions.push("BERG");
+
+        // TUG filled -> TUG
+        if (equilibreData.tugStandard || equilibreData.tugCognitif || equilibreData.tugMoteur) {
+            automaticInterventions.push("TUG");
+        }
+
+        // Marche filled
+        const hasMarche = marcheNotes.trim() || marcheDistance.trim() || marcheTime.trim() || marcheBorgPre.trim() || marcheBorgPost.trim();
+        if (hasMarche) {
+            let marcheStr = "Marche";
+            if (aideTechnique && aideTechnique !== 'Aucun') {
+                marcheStr += ` (${aideTechnique})`;
+            }
+            automaticInterventions.push(marcheStr);
+        }
+
+        // Escalier filled
+        const hasEscalier = escalierNotes.trim() || escalierPatron || escalierMarches || escalierMainCourante;
+        if (hasEscalier) {
+            automaticInterventions.push("Escalier");
+        }
+
+        // Transferts filled
+        if (transfertsNotes.trim()) {
+            automaticInterventions.push("transfert");
+        }
+
+        if (hasSelectedExercises || automaticInterventions.length > 0) {
             report += `I:\n\n`;
+
+            if (automaticInterventions.length > 0) {
+                const formattedInterventions = automaticInterventions.length === 1
+                    ? automaticInterventions[0]
+                    : `${automaticInterventions.slice(0, -1).join(', ')} et ${automaticInterventions.slice(-1)}`;
+                report += `${formattedInterventions}\n\n`;
+            }
 
             Object.entries(exerciseCategories).forEach(([category, items]) => {
                 const selectedInCat = items.filter(item => exerciseChecklist[item]?.checked && !item.startsWith('HEADER:'));
@@ -354,7 +445,11 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         if (evalFinTxNotes.trim() || evalFinTxPainScore !== null) {
             report += `E:\n`;
             if (evalFinTxPainScore !== null) {
-                report += `Douleur (EVA): ${evalFinTxPainScore}/10\n`;
+                const painText = evalFinTxPainScore === 0 ? 'Aucune Douleur' : `${evalFinTxPainScore}/10`;
+                report += `Douleur (EVA): ${painText}\n`;
+            }
+            if (evalFinTxPainLocation.trim()) {
+                report += `Localisation: ${evalFinTxPainLocation.trim()}\n`;
             }
             if (evalFinTxNotes.trim()) {
                 report += `${evalFinTxNotes.trim()}\n`;
@@ -468,6 +563,8 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                 setShowPainScale(true);
                             }}
                             painScore={painScore}
+                            painLocation={subjectivePainLocation}
+                            onPainLocationChange={setSubjectivePainLocation}
                         />
                     </div>);
             case 'analyse':
@@ -509,6 +606,8 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                 setShowPainScale(true);
                             }}
                             painScore={evalFinTxPainScore}
+                            painLocation={evalFinTxPainLocation}
+                            onPainLocationChange={setEvalFinTxPainLocation}
                         />
                     </div>);
             case 'objectif':
@@ -856,6 +955,74 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                         </div>
                                     </div>
                                 </>
+                            )}
+
+                            {subView === 'escalier' && (
+                                <div className="mb-3">
+                                    <label className="form-label">Patron</label>
+                                    <div className="d-flex gap-3 mb-2">
+                                        <div className="form-check">
+                                            <input
+                                                className="form-check-input"
+                                                type="radio"
+                                                name="escalierPatron"
+                                                id="patronAlterne"
+                                                value="alterné"
+                                                checked={escalierPatron === 'alterné'}
+                                                onChange={(e) => setEscalierPatron(e.target.value)}
+                                            />
+                                            <label className="form-check-label" htmlFor="patronAlterne">
+                                                Alterné
+                                            </label>
+                                        </div>
+                                        <div className="form-check">
+                                            <input
+                                                className="form-check-input"
+                                                type="radio"
+                                                name="escalierPatron"
+                                                id="patronNonAlterne"
+                                                value="non-alterné"
+                                                checked={escalierPatron === 'non-alterné'}
+                                                onChange={(e) => setEscalierPatron(e.target.value)}
+                                            />
+                                            <label className="form-check-label" htmlFor="patronNonAlterne">
+                                                Non-alterné
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div className="mb-3">
+                                        <label className="form-label">Main-courante</label>
+                                        <div className="d-flex gap-3">
+                                            {['0', '1', '2'].map(val => (
+                                                <div className="form-check" key={val}>
+                                                    <input
+                                                        className="form-check-input"
+                                                        type="radio"
+                                                        name="escalierMainCourante"
+                                                        id={`mainCourante${val}`}
+                                                        value={val}
+                                                        checked={escalierMainCourante === val}
+                                                        onChange={(e) => setEscalierMainCourante(e.target.value)}
+                                                    />
+                                                    <label className="form-check-label" htmlFor={`mainCourante${val}`}>
+                                                        {val}
+                                                    </label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="mb-3">
+                                        <label htmlFor="escalierMarches" className="form-label">Nombre de marches</label>
+                                        <input
+                                            type="text"
+                                            className="form-control"
+                                            id="escalierMarches"
+                                            placeholder="Ex: 12"
+                                            value={escalierMarches}
+                                            onChange={(e) => setEscalierMarches(e.target.value)}
+                                        />
+                                    </div>
+                                </div>
                             )}
 
                             <NotesForm label="Notes" placeholder={`Notes sur ${title.toLowerCase()}...`} value={state} onChange={setState} />

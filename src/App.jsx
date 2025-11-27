@@ -100,14 +100,7 @@ function App() {
 
     return (
       <div className="container mt-4 mb-5 position-relative">
-        <button
-          className="btn btn-outline-secondary position-absolute top-0"
-          onClick={toggleDarkMode}
-          title="Basculer le mode sombre"
-          style={{ zIndex: 1000, right: '220px' }}
-        >
-          {darkMode ? '☀️' : '🌗'}
-        </button>
+
         <ReportEditor
           patientName={patientName}
           reportDate={reportDate}
