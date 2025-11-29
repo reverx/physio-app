@@ -33,6 +33,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
     const [escalierNotes, setEscalierNotes] = useState(initialData?.escalierNotes || '');
     const [exercicesNotes, setExercicesNotes] = useState(initialData?.exercicesNotes || '');
     const [transfertsNotes, setTransfertsNotes] = useState(initialData?.transfertsNotes || '');
+    const [transfertsData, setTransfertsData] = useState(initialData?.transfertsData || {});
     const [analyseNotes, setAnalyseNotes] = useState(initialData?.analyseNotes || '');
     const [planNotes, setPlanNotes] = useState(initialData?.planNotes || '');
     const [evalFinTxNotes, setEvalFinTxNotes] = useState(initialData?.evalFinTxNotes || '');
@@ -64,6 +65,12 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         temperatureFroide: false
     });
 
+    // Test Doigt-Nez state
+    const [testDoigtNezData, setTestDoigtNezData] = useState(initialData?.testDoigtNezData || {
+        droit: initialData?.oedemeData?.testDoigtNezDroit || '',
+        gauche: initialData?.oedemeData?.testDoigtNezGauche || ''
+    });
+
     // Checklist state for 'Exercices'
     // Structure: { [exerciseName]: { checked: boolean, reps: '', sets: '', hold: '' } }
     const [exerciseChecklist, setExerciseChecklist] = useState(initialData?.exerciseChecklist || {});
@@ -77,7 +84,9 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         marcheNotes,
         escalierNotes,
         exercicesNotes,
+        exercicesNotes,
         transfertsNotes,
+        transfertsData,
         analyseNotes,
         planNotes,
         evalFinTxNotes,
@@ -93,7 +102,10 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         evalFinTxPainLocation,
         escalierPatron,
         escalierMarches,
+        escalierPatron,
+        escalierMarches,
         escalierMainCourante,
+        testDoigtNezData,
     });
 
     // Auto-save effect
@@ -112,7 +124,9 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         marcheNotes,
         escalierNotes,
         exercicesNotes,
+        exercicesNotes,
         transfertsNotes,
+        transfertsData,
         analyseNotes,
         planNotes,
         evalFinTxNotes,
@@ -129,6 +143,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         escalierPatron,
         escalierMarches,
         escalierMainCourante,
+        testDoigtNezData,
         onSave
     ]);
 
@@ -179,6 +194,32 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         }));
     };
 
+    const handleJointNoteChange = (joint, side, value) => {
+        setObjectiveData(prev => ({
+            ...prev,
+            'aa-bm': {
+                ...prev['aa-bm'],
+                [joint]: {
+                    ...prev['aa-bm'][joint],
+                    [side]: {
+                        ...prev['aa-bm'][joint][side],
+                        notes: value
+                    }
+                }
+            }
+        }));
+    };
+
+    const handleTransfertChange = (item, field, value) => {
+        setTransfertsData(prev => ({
+            ...prev,
+            [item]: {
+                ...prev[item],
+                [field]: value
+            }
+        }));
+    };
+
     const generateReportText = () => {
         let report = `H: Date: ${reportDate}\nNom: ${patientName}\n\n`;
 
@@ -219,9 +260,12 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                         movementsWithData.push(line);
                     }
                 }
-                if (movementsWithData.length > 0) {
+                const notes = objectiveData['aa-bm'][joint]?.[side]?.notes;
+                if (movementsWithData.length > 0 || notes?.trim()) {
                     hasAaBmData = true;
-                    aaBmContent += `\n${joint} (${side}):\n` + movementsWithData.join('\n');
+                    aaBmContent += `\n${joint} (${side}):\n`;
+                    if (movementsWithData.length > 0) aaBmContent += movementsWithData.join('\n') + '\n';
+                    if (notes?.trim()) aaBmContent += `Commentaire: ${notes.trim()}\n`;
                 }
             }
         }
@@ -243,7 +287,11 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                 equilibreContent += `${index + 1}. ${item}: ${score}\n`;
                 totalBerg += score;
             });
-            equilibreContent += `Total: ${totalBerg} / 56\n\n`;
+            equilibreContent += `Total: ${totalBerg} / 56\n`;
+            if (equilibreData.bergNotes?.trim()) {
+                equilibreContent += `Commentaire: ${equilibreData.bergNotes.trim()}\n`;
+            }
+            equilibreContent += `\n`;
         }
 
         // TUG
@@ -252,6 +300,9 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
             if (equilibreData.tugStandard) equilibreContent += `Standard: ${equilibreData.tugStandard}\n`;
             if (equilibreData.tugCognitif) equilibreContent += `Cognitif: ${equilibreData.tugCognitif}\n`;
             if (equilibreData.tugMoteur) equilibreContent += `Moteur: ${equilibreData.tugMoteur}\n`;
+            if (equilibreData.tugNotes?.trim()) {
+                equilibreContent += `Commentaire: ${equilibreData.tugNotes.trim()}\n`;
+            }
             equilibreContent += '\n';
         }
 
@@ -288,6 +339,15 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
             objectifContent += `\n`;
         }
 
+        // Test Doigt-Nez Section
+        // Test Doigt-Nez Section
+        if (testDoigtNezData.droit || testDoigtNezData.gauche) {
+            objectifContent += `--- Test Doigt-Nez ---\n`;
+            if (testDoigtNezData.droit) objectifContent += `Droit 5x: ${testDoigtNezData.droit}\n`;
+            if (testDoigtNezData.gauche) objectifContent += `Gauche 5x: ${testDoigtNezData.gauche}\n`;
+            objectifContent += `\n`;
+        }
+
         // Add other sections dynamically
         const otherSections = [
             { title: 'Marche', data: marcheNotes, aideTechnique: aideTechnique, distance: marcheDistance, time: marcheTime, borgPre: marcheBorgPre, borgPost: marcheBorgPost },
@@ -297,7 +357,39 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         ];
 
         otherSections.forEach(section => {
-            if (section.data.trim()) {
+            if (section.title === 'Transferts') {
+                let transfertsContent = '';
+                const transferItems = [
+                    "se remonter dans le lit",
+                    "DD - DL (G ou D)",
+                    "couché - assis",
+                    "assis - couché",
+                    "assis - debout",
+                    "debout - assis",
+                    "4 pattes",
+                    "génuflexion gauche",
+                    "génuflexion droite",
+                    "se relever du sol"
+                ];
+
+                transferItems.forEach(item => {
+                    if (transfertsData[item]?.checked) {
+                        transfertsContent += `- ${item}`;
+                        if (transfertsData[item]?.comment) {
+                            transfertsContent += ` (${transfertsData[item].comment})`;
+                        }
+                        transfertsContent += '\n';
+                    }
+                });
+
+                if (section.data.trim()) {
+                    transfertsContent += `Notes: ${section.data.trim()}\n`;
+                }
+
+                if (transfertsContent) {
+                    objectifContent += `--- ${section.title} ---\n${transfertsContent}\n\n`;
+                }
+            } else if (section.data.trim()) {
                 if (section.title === 'Marche') {
                     const aideText = section.aideTechnique === 'Aucun' ? 'sans aide-technique' : `avec aide-technique: ${section.aideTechnique}`;
                     let marcheDetails = `Marche ${aideText}\n`;
@@ -390,7 +482,7 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         }
 
         // Transferts filled
-        if (transfertsNotes.trim()) {
+        if (transfertsNotes.trim() || Object.keys(transfertsData).some(k => transfertsData[k]?.checked)) {
             automaticInterventions.push("transfert");
         }
 
@@ -714,6 +806,16 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                     </tbody>
                                 </table>
                             </div>
+                            <div className="mt-3">
+                                <label className="form-label">Notes / Commentaires</label>
+                                <textarea
+                                    className="form-control"
+                                    rows="3"
+                                    placeholder="Notes pour cette articulation..."
+                                    value={objectiveData['aa-bm'][joint][side]?.notes || ''}
+                                    onChange={(e) => handleJointNoteChange(joint, side, e.target.value)}
+                                />
+                            </div>
                         </div>
                     );
                 }
@@ -734,6 +836,16 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                     initialScores={equilibreData.berg}
                                     onSave={(scores) => handleEquilibreDataChange('berg', scores)}
                                 />
+                                <div className="mt-3">
+                                    <label className="form-label">Notes / Commentaires</label>
+                                    <textarea
+                                        className="form-control"
+                                        rows="3"
+                                        placeholder="Notes pour le test BERG..."
+                                        value={equilibreData.bergNotes || ''}
+                                        onChange={(e) => handleEquilibreDataChange('bergNotes', e.target.value)}
+                                    />
+                                </div>
                             </div>
                         );
                     }
@@ -761,6 +873,16 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                     value={equilibreData.tugMoteur}
                                     onChange={(v) => handleEquilibreDataChange('tugMoteur', v)}
                                 />
+                                <div className="mt-3">
+                                    <label className="form-label">Notes / Commentaires</label>
+                                    <textarea
+                                        className="form-control"
+                                        rows="3"
+                                        placeholder="Notes pour le test TUG..."
+                                        value={equilibreData.tugNotes || ''}
+                                        onChange={(e) => handleEquilibreDataChange('tugNotes', e.target.value)}
+                                    />
+                                </div>
                             </div>
                         );
                     }
@@ -784,8 +906,62 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                     'marche': { title: 'Marche', state: marcheNotes, setState: setMarcheNotes },
                     'escalier': { title: 'Escalier', state: escalierNotes, setState: setEscalierNotes },
                     'exercices': { title: 'Exercices', state: exercicesNotes, setState: setExercicesNotes },
-                    'transferts': { title: 'Transferts', state: transfertsNotes, setState: setTransfertsNotes },
                 };
+
+                if (subView === 'transferts') {
+                    const transferItems = [
+                        "se remonter dans le lit",
+                        "DD - DL (G ou D)",
+                        "couché - assis",
+                        "assis - couché",
+                        "assis - debout",
+                        "debout - assis",
+                        "4 pattes",
+                        "génuflexion gauche",
+                        "génuflexion droite",
+                        "se relever du sol"
+                    ];
+
+                    return (
+                        <div>
+                            {goBackToObjectiveMenu}
+                            <h2>Transferts</h2>
+                            <div className="mb-4">
+                                {transferItems.map(item => (
+                                    <div key={item} className="mb-3 p-3 border rounded bg-light">
+                                        <div className="form-check mb-2">
+                                            <input
+                                                className="form-check-input"
+                                                type="checkbox"
+                                                checked={transfertsData[item]?.checked || false}
+                                                onChange={(e) => handleTransfertChange(item, 'checked', e.target.checked)}
+                                                id={`check-${item}`}
+                                            />
+                                            <label className="form-check-label fw-bold" htmlFor={`check-${item}`}>
+                                                {item}
+                                            </label>
+                                        </div>
+                                        {transfertsData[item]?.checked && (
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Commentaire..."
+                                                value={transfertsData[item]?.comment || ''}
+                                                onChange={(e) => handleTransfertChange(item, 'comment', e.target.value)}
+                                            />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            <NotesForm
+                                label="Notes Générales"
+                                placeholder="Autres notes sur les transferts..."
+                                value={transfertsNotes}
+                                onChange={setTransfertsNotes}
+                            />
+                        </div>
+                    );
+                }
 
                 if (subView === 'oedeme') {
                     return (
@@ -875,6 +1051,33 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                     value={oedemeData.below5cm}
                                     onChange={(e) => setOedemeData({ ...oedemeData, below5cm: e.target.value })}
                                 />
+                            </div>
+                        </div>
+                    );
+                }
+
+                if (subView === 'test-doigt-nez') {
+                    return (
+                        <div>
+                            {goBackToObjectiveMenu}
+                            <h2>Test Doigt-Nez</h2>
+                            <div className="row">
+                                <div className="col-md-6">
+                                    <TimerInput
+                                        label="Droit 5x"
+                                        placeholder="Temps ou notes..."
+                                        value={testDoigtNezData.droit}
+                                        onChange={(v) => setTestDoigtNezData({ ...testDoigtNezData, droit: v })}
+                                    />
+                                </div>
+                                <div className="col-md-6">
+                                    <TimerInput
+                                        label="Gauche 5x"
+                                        placeholder="Temps ou notes..."
+                                        value={testDoigtNezData.gauche}
+                                        onChange={(v) => setTestDoigtNezData({ ...testDoigtNezData, gauche: v })}
+                                    />
+                                </div>
                             </div>
                         </div>
                     );

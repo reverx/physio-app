@@ -14,6 +14,10 @@ const CircularGoniometer = ({ initialValue, onSave, onCancel }) => {
         const x = clientX - centerX;
         const y = clientY - centerY;
 
+        // Deadzone check: if touch is too close to center, ignore to prevent jumps
+        const distance = Math.sqrt(x * x + y * y);
+        if (distance < 40) return;
+
         // Calculate angle in radians
         let rad = Math.atan2(y, x);
 
@@ -84,6 +88,10 @@ const CircularGoniometer = ({ initialValue, onSave, onCancel }) => {
     };
 
     const handleStart = (e) => {
+        // Prevent default only if it's a touch event to stop scrolling/zooming
+        if (e.type === 'touchstart') {
+            // e.preventDefault(); // React synthetic event might not support this directly or it might be too aggressive
+        }
         isDragging.current = true;
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
@@ -92,6 +100,12 @@ const CircularGoniometer = ({ initialValue, onSave, onCancel }) => {
 
     const handleMove = (e) => {
         if (!isDragging.current) return;
+
+        // Prevent scrolling while dragging
+        if (e.touches && e.cancelable) {
+            e.preventDefault();
+        }
+
         const clientX = e.touches ? e.touches[0].clientX : e.clientX;
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         calculateAngle(clientX, clientY);
@@ -102,10 +116,11 @@ const CircularGoniometer = ({ initialValue, onSave, onCancel }) => {
     };
 
     useEffect(() => {
+        const options = { passive: false };
         window.addEventListener('mouseup', handleEnd);
         window.addEventListener('touchend', handleEnd);
         window.addEventListener('mousemove', handleMove);
-        window.addEventListener('touchmove', handleMove);
+        window.addEventListener('touchmove', handleMove, options);
         return () => {
             window.removeEventListener('mouseup', handleEnd);
             window.removeEventListener('touchend', handleEnd);
@@ -151,6 +166,15 @@ const CircularGoniometer = ({ initialValue, onSave, onCancel }) => {
     const knobX = endX;
     const knobY = endY;
 
+    const adjustAngle = (delta) => {
+        setAngle(prev => {
+            let newAngle = prev + delta;
+            if (newAngle < 0) newAngle = 359;
+            if (newAngle >= 360) newAngle = 0;
+            return newAngle;
+        });
+    };
+
     return (
         <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-75" style={{ zIndex: 2000 }}>
             <div className="card p-4 text-center shadow-lg" style={{ width: '350px', borderRadius: '20px' }}>
@@ -158,8 +182,8 @@ const CircularGoniometer = ({ initialValue, onSave, onCancel }) => {
 
                 <div
                     ref={circleRef}
-                    className="position-relative mx-auto mb-4"
-                    style={{ width: '300px', height: '300px', cursor: 'pointer' }}
+                    className="position-relative mx-auto mb-3"
+                    style={{ width: '300px', height: '300px', cursor: 'pointer', touchAction: 'none' }}
                     onMouseDown={handleStart}
                     onTouchStart={handleStart}
                 >
@@ -184,6 +208,24 @@ const CircularGoniometer = ({ initialValue, onSave, onCancel }) => {
                     <div className="position-absolute top-50 start-50 translate-middle">
                         <h1 className="display-3 fw-bold text-info">{angle}°</h1>
                     </div>
+                </div>
+
+                {/* Fine Tune Controls */}
+                <div className="d-flex justify-content-center gap-3 mb-4">
+                    <button
+                        className="btn btn-outline-dark rounded-circle d-flex align-items-center justify-content-center"
+                        style={{ width: '50px', height: '50px', fontSize: '24px' }}
+                        onClick={() => adjustAngle(-1)}
+                    >
+                        -
+                    </button>
+                    <button
+                        className="btn btn-outline-dark rounded-circle d-flex align-items-center justify-content-center"
+                        style={{ width: '50px', height: '50px', fontSize: '24px' }}
+                        onClick={() => adjustAngle(1)}
+                    >
+                        +
+                    </button>
                 </div>
 
                 <div className="d-flex justify-content-between gap-3">

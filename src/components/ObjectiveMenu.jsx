@@ -45,6 +45,12 @@ function ObjectiveMenu({ onSelectView }) {
       >
         Oedème/Enflure/Coloration
       </button>
+      <button
+        className="btn btn-info p-3 text-white"
+        onClick={() => onSelectView('objectif.test-doigt-nez')}
+      >
+        Test Doigt-Nez
+      </button>
     </div>
   );
 }
