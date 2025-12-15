@@ -25,6 +25,18 @@ code {
   color: white !important;
 }
 
+/* Custom Eval Button - Brown */
+.btn-custom-eval {
+  background-color: #795548 !important;
+  border-color: #795548 !important;
+  color: white !important;
+}
+
+.btn-custom-eval:hover {
+  background-color: #5D4037 !important;
+  border-color: #5D4037 !important;
+}
+
 /* Dark mode adjustments for Oedeme checkboxes */
 [data-bs-theme='dark'] .oedeme-checkbox-label {
   color: #20c997 !important;
@@ -46,4 +58,195 @@ code {
   background-color: #2b3035 !important;
   /* Darker background for container */
   border-color: #495057 !important;
+}
+
+/* =========================================
+   NATURE THEME (Light Mode Default)
+   ========================================= */
+.nature-theme {
+  --nature-bg: #FDF8E2;
+  --nature-text: #2c3e28;
+  --nature-primary: #A65218;
+  --nature-secondary: #556B2F;
+  --nature-dark: #4A3728;
+  /* Dark Brown */
+  --nature-eval: #8D6E63;
+  /* Brown */
+  --nature-card-bg: #FFFFFF;
+  --nature-border: #CD8C48;
+  --nature-input-bg: #FFFEF9;
+
+  --bs-body-bg: var(--nature-bg);
+  --bs-body-color: var(--nature-text);
+  --bs-primary: var(--nature-primary);
+  --bs-primary-rgb: 166, 82, 24;
+  --bs-secondary: var(--nature-secondary);
+  --bs-secondary-rgb: 85, 107, 47;
+  --bs-success: var(--nature-secondary);
+  --bs-link-color: var(--nature-primary);
+  --bs-link-hover-color: #803D10;
+
+  background-color: var(--bs-body-bg);
+  color: var(--bs-body-color);
+}
+
+/* Override text-primary to remove turquoise/blue in Nature mode */
+.nature-theme .text-primary {
+  color: var(--nature-primary) !important;
+}
+
+.nature-theme .card {
+  background-color: var(--nature-card-bg);
+  border: 1px solid var(--nature-border);
+  box-shadow: 0 4px 6px rgba(166, 82, 24, 0.1);
+}
+
+.nature-theme .btn-primary {
+  background-color: var(--nature-primary) !important;
+  border-color: var(--nature-primary) !important;
+}
+
+.nature-theme .btn-primary:hover {
+  background-color: #8a4213 !important;
+  border-color: #8a4213 !important;
+}
+
+.nature-theme .btn-outline-primary {
+  color: var(--nature-primary) !important;
+  border-color: var(--nature-primary) !important;
+}
+
+.nature-theme .btn-outline-primary:hover {
+  background-color: var(--nature-primary) !important;
+  color: white !important;
+}
+
+.nature-theme .btn-success {
+  background-color: var(--nature-secondary) !important;
+  border-color: var(--nature-secondary) !important;
+}
+
+.nature-theme .btn-success:hover {
+  background-color: #435424 !important;
+  border-color: #435424 !important;
+}
+
+.nature-theme .btn-dark {
+  background-color: var(--nature-dark) !important;
+  border-color: var(--nature-dark) !important;
+  color: #E6D5B8 !important;
+}
+
+.nature-theme .btn-dark:hover {
+  background-color: #36281d !important;
+  border-color: #36281d !important;
+}
+
+.nature-theme .btn-custom-eval {
+  background-color: var(--nature-eval) !important;
+  border-color: var(--nature-eval) !important;
+  color: #FDF8E2 !important;
+}
+
+.nature-theme .btn-custom-eval:hover {
+  background-color: #633b43 !important;
+  border-color: #633b43 !important;
+}
+
+.nature-theme .form-control,
+.nature-theme .form-select {
+  border-color: var(--nature-border);
+  background-color: var(--nature-input-bg);
+  color: var(--nature-text);
+}
+
+.nature-theme .form-control:focus,
+.nature-theme .form-select:focus {
+  border-color: var(--nature-primary);
+  box-shadow: 0 0 0 0.25rem rgba(166, 82, 24, 0.25);
+}
+
+.nature-theme .list-group-item {
+  background-color: var(--nature-input-bg);
+  border-color: #E6D5B8;
+  color: var(--nature-text);
+}
+
+.nature-theme .accordion-button {
+  background-color: var(--nature-bg);
+  color: var(--nature-primary);
+}
+
+.nature-theme .accordion-button:not(.collapsed) {
+  background-color: #E6D5B8;
+  color: #8a4213;
+}
+
+.nature-theme h1,
+.nature-theme h2,
+.nature-theme h3,
+.nature-theme h4,
+.nature-theme h5 {
+  color: var(--nature-secondary);
+}
+
+.nature-theme hr {
+  border-color: var(--nature-primary);
+  opacity: 0.5;
+}
+
+/* =========================================
+   NATURE THEME (Dark Mode Override)
+   ========================================= */
+[data-bs-theme='dark'] body.nature-theme {
+  --nature-bg: #1a2618;
+  /* Very dark green */
+  --nature-text: #E6D5B8;
+  /* Light beige/cream */
+  --nature-primary: #D98E4F;
+  /* Lighter rust/orange */
+  --nature-secondary: #8FA866;
+  /* Lighter olive */
+  --nature-dark: #3E2F26;
+  /* Darker brown for dark mode */
+  --nature-eval: #A1887F;
+  /* Lighter Brown for dark mode */
+  --nature-card-bg: #243321;
+  /* Dark green card */
+  --nature-border: #556B2F;
+  --nature-input-bg: #2c3e28;
+
+  --bs-body-bg: var(--nature-bg);
+  --bs-body-color: var(--nature-text);
+
+  background-color: var(--nature-bg);
+  color: var(--nature-text);
+}
+
+[data-bs-theme='dark'] body.nature-theme .card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+[data-bs-theme='dark'] body.nature-theme .form-control,
+[data-bs-theme='dark'] body.nature-theme .form-select {
+  color: var(--nature-text);
+}
+
+[data-bs-theme='dark'] body.nature-theme .form-control::placeholder {
+  color: #8FA866;
+  opacity: 0.7;
+}
+
+[data-bs-theme='dark'] body.nature-theme .list-group-item {
+  border-color: #556B2F;
+}
+
+[data-bs-theme='dark'] body.nature-theme .accordion-button {
+  background-color: #243321;
+  color: var(--nature-primary);
+}
+
+[data-bs-theme='dark'] body.nature-theme .accordion-button:not(.collapsed) {
+  background-color: #2c3e28;
+  color: var(--nature-primary);
 }

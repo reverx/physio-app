@@ -74,6 +74,8 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
     // Checklist state for 'Exercices'
     // Structure: { [exerciseName]: { checked: boolean, reps: '', sets: '', hold: '' } }
     const [exerciseChecklist, setExerciseChecklist] = useState(initialData?.exerciseChecklist || {});
+    const [temporaryExercises, setTemporaryExercises] = useState(initialData?.temporaryExercises || []);
+    const [newExerciseName, setNewExerciseName] = useState('');
 
     // Auto-save effect (optional, but good practice) or just helper to get current data
     const getCurrentData = () => ({
@@ -105,7 +107,11 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         escalierPatron,
         escalierMarches,
         escalierMainCourante,
+        escalierPatron,
+        escalierMarches,
+        escalierMainCourante,
         testDoigtNezData,
+        temporaryExercises,
     });
 
     // Auto-save effect
@@ -143,7 +149,10 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
         escalierPatron,
         escalierMarches,
         escalierMainCourante,
+        escalierMarches,
+        escalierMainCourante,
         testDoigtNezData,
+        temporaryExercises,
         onSave
     ]);
 
@@ -218,6 +227,28 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                 [field]: value
             }
         }));
+    };
+
+    const handleAddExercise = () => {
+        if (newExerciseName.trim()) {
+            setTemporaryExercises(prev => [...prev, newExerciseName.trim()]);
+            // Also add to checklist so it can be selected immediately
+            setExerciseChecklist(prev => ({
+                ...prev,
+                [newExerciseName.trim()]: { checked: true, reps: '', sets: '', hold: '' }
+            }));
+            setNewExerciseName('');
+        }
+    };
+
+    const handleRemoveExercise = (exerciseToRemove) => {
+        setTemporaryExercises(prev => prev.filter(ex => ex !== exerciseToRemove));
+        // Optional: Remove from checklist data as well if you want to clean up completely
+        setExerciseChecklist(prev => {
+            const newState = { ...prev };
+            delete newState[exerciseToRemove];
+            return newState;
+        });
     };
 
     const generateReportText = () => {
@@ -1228,12 +1259,118 @@ function ReportEditor({ patientName, reportDate, initialData, onSave, onExit }) 
                                 </div>
                             )}
 
-                            <NotesForm label="Notes" placeholder={`Notes sur ${title.toLowerCase()}...`} value={state} onChange={setState} />
+                            <NotesForm
+                                label="Notes"
+                                placeholder={`Notes sur ${title.toLowerCase()}...`}
+                                value={state}
+                                onChange={setState}
+                                style={{ height: '100px' }}
+                            />
 
                             {/* Checklist for Exercices */}
                             {subView === 'exercices' && (
-                                <div className="mb-3">
+                                <div className="mb-3 mt-4">
                                     <h3>Liste des exercices</h3>
+
+                                    {/* Add New Exercise Section */}
+                                    <div className="card mb-4 border-danger">
+                                        <div className="card-header bg-danger text-white">
+                                            Ajouter un exercice manquant (sera en rouge)
+                                        </div>
+                                        <div className="card-body">
+                                            <div className="input-group">
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder="Nom de l'exercice..."
+                                                    value={newExerciseName}
+                                                    onChange={(e) => setNewExerciseName(e.target.value)}
+                                                    onKeyPress={(e) => e.key === 'Enter' && handleAddExercise()}
+                                                />
+                                                <button
+                                                    className="btn btn-danger"
+                                                    onClick={handleAddExercise}
+                                                    disabled={!newExerciseName.trim()}
+                                                >
+                                                    Ajouter
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Temporary Exercises Section */}
+                                    {temporaryExercises.length > 0 && (
+                                        <div className="mb-4">
+                                            <h5 className="text-danger border-bottom border-danger pb-2">Exercices Ajoutés (À intégrer)</h5>
+                                            <div className="list-group">
+                                                {temporaryExercises.map((exercise) => (
+                                                    <div key={exercise} className="list-group-item border-danger">
+                                                        <div className="d-flex align-items-center justify-content-between mb-2">
+                                                            <div className="d-flex align-items-center">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id={`exercise-${exercise}`}
+                                                                    className="form-check-input me-2"
+                                                                    checked={exerciseChecklist[exercise]?.checked || false}
+                                                                    onChange={() => toggleExercise(exercise)}
+                                                                />
+                                                                <label htmlFor={`exercise-${exercise}`} className="form-check-label fw-bold text-danger">
+                                                                    {exercise}
+                                                                </label>
+                                                            </div>
+                                                            <button
+                                                                className="btn btn-sm btn-outline-danger"
+                                                                onClick={() => handleRemoveExercise(exercise)}
+                                                                title="Supprimer cet exercice"
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </div>
+                                                        {exerciseChecklist[exercise]?.checked && (
+                                                            <div className="row g-2 ms-4">
+                                                                <div className="col-3">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="form-control form-control-sm border-danger"
+                                                                        placeholder="Séries"
+                                                                        value={exerciseChecklist[exercise]?.sets || ''}
+                                                                        onChange={(e) => handleExerciseDetailChange(exercise, 'sets', e.target.value)}
+                                                                    />
+                                                                </div>
+                                                                <div className="col-3">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="form-control form-control-sm border-danger"
+                                                                        placeholder="Reps"
+                                                                        value={exerciseChecklist[exercise]?.reps || ''}
+                                                                        onChange={(e) => handleExerciseDetailChange(exercise, 'reps', e.target.value)}
+                                                                    />
+                                                                </div>
+                                                                <div className="col-3">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="form-control form-control-sm border-danger"
+                                                                        placeholder="Hold"
+                                                                        value={exerciseChecklist[exercise]?.hold || ''}
+                                                                        onChange={(e) => handleExerciseDetailChange(exercise, 'hold', e.target.value)}
+                                                                    />
+                                                                </div>
+                                                                <div className="col-3">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="form-control form-control-sm border-danger"
+                                                                        placeholder="Comm."
+                                                                        value={exerciseChecklist[exercise]?.comment || ''}
+                                                                        onChange={(e) => handleExerciseDetailChange(exercise, 'comment', e.target.value)}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                     {Object.entries(exerciseCategories).map(([category, items]) => (
                                         <div key={category} className="mb-4">
                                             <h5 className="text-primary border-bottom pb-2">{category}</h5>

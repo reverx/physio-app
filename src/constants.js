@@ -49,7 +49,8 @@ export const exerciseCategories = {
         'Marche lat pieds croisés',
         'Marche tandem',
         'Marche genoux haut',
-        '1/2 fente avant'
+        '1/2 fente avant',
+        'Debout transfert de poids devant pieds'
     ],
     'Exs de renforcements M.infs': [
         'HEADER:Debout',

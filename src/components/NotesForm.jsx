@@ -1,6 +1,6 @@
 import React from 'react';
 
-function NotesForm({ value, onChange, placeholder, label }) {
+function NotesForm({ value, onChange, placeholder, label, style }) {
   const id = `notes-textarea-${label.replace(/\s+/g, '-')}`;
   return (
     <div>
@@ -9,7 +9,7 @@ function NotesForm({ value, onChange, placeholder, label }) {
           className="form-control"
           placeholder={placeholder}
           id={id}
-          style={{ height: '250px' }}
+          style={{ height: '250px', ...style }}
           value={value}
           onChange={(e) => onChange(e.target.value)}
         ></textarea>

@@ -14,12 +14,27 @@ function App() {
   }, [view]); // Refresh list when returning to home
 
   const [darkMode, setDarkMode] = useState(false);
+  const [natureMode, setNatureMode] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-bs-theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
-  const toggleDarkMode = () => setDarkMode(!darkMode);
+  useEffect(() => {
+    if (natureMode) {
+      document.body.classList.add('nature-theme');
+    } else {
+      document.body.classList.remove('nature-theme');
+    }
+  }, [natureMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  const toggleNatureMode = () => {
+    setNatureMode(!natureMode);
+  };
 
   const startNewReport = (nameOverride) => {
     const nameToUse = nameOverride || patientName;
@@ -121,6 +136,14 @@ function App() {
         style={{ zIndex: 1000 }}
       >
         {darkMode ? '☀️' : '🌗'}
+      </button>
+      <button
+        className="btn btn-outline-secondary position-absolute top-0 end-0 mt-2 me-5"
+        onClick={toggleNatureMode}
+        title="Thème Nature"
+        style={{ zIndex: 1000, marginRight: '40px' }}
+      >
+        🎨
       </button>
       <div className="row justify-content-center">
         <div className="col-md-8 text-center">
